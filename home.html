@@ -15,12 +15,11 @@
         <div id="ttt" ng-controller="GameCtrl">
       <div id="header">I want to play a game with you</div>
       <div id="header">
-      <select ng-model="gameType">
+      <select ng-model="gameType" ng-change="play()">
           <option value="hvh">Mortal vs Mortal</option>
           <option value="hvc">Blue Gene vs Mortal</option>
           <option value="cvc">Clash of the titans</option>
     </select>
-    <input type="button" ng-click="play()" value="PLAY">
       </div>
         <div class="board">
           <div id="square_0" class="square" ng-click="mark(0)"><div class="mark">{{board.board[0][1]}}</div></div>
@@ -34,8 +33,7 @@
           <div id="square_8" class="square" ng-click="mark(8)"><div class="mark">{{board.board[8][1]}}</div></div>
         </div>
         <div style="" id="footer">
-          <div class="message">{{winner}} Is The winner :)</div>
-          <a class="start" href="#">play again</a>
+          <div class="message"><a href="https://github.com/aswani/tic-tac-toe">view code at github</a></div>
         </div>
       </div>     
 

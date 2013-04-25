@@ -2,32 +2,29 @@
 
 /* Controllers */
 
-function GameCtrl($scope, $q, $timeout) {
+function GameCtrl($scope,$q,$timeout) {
 	$scope.board = new Board();
-	$scope.xPlayer = new WhiteQueenPlayer("X", $scope.board);
-	$scope.oPlayer = new WhiteQueenPlayer("O", $scope.board);
-	$scope.gameType = "hvh";
+	$scope.xPlayer = new HumanPlayer("O", $scope.board);
+	$scope.oPlayer = new WhiteQueenPlayer("X", $scope.board);
 
-	$scope.game = new Game($scope.xPlayer, $scope.oPlayer, $scope.board,$timeout);
-	//capture cell click event
+	$scope.gameType = "hvc";
+	$scope.game = new Game($scope.xPlayer, $scope.oPlayer, $scope.board,$scope.gameType);
 	$scope.mark = function(index) {
 		if ($scope.board.board[index][1] != "") return;
-		$scope.game.markSquare(index)
-	};
-	//start the Game
-	$scope.game.start(function(result) {
-		// game result IS sent!!
-		if (result != undefined) {
+		var result=$scope.game.markSquare(index)
+		if (result!=undefined) {
 			alert(result);
 		};
-	});
+	};
+	$scope.game.start();
+	
 }
 
 var HumanPlayer = function(mark, board) {
 	this.mark = mark;
 	this.playerType = "Human";
+	
 }
-
 /**
 	WhiteQueen Player Impleminting Minimax Algo.
 
@@ -36,18 +33,15 @@ var WhiteQueenPlayer = function(mark, board) {
 	this.mark = mark;
 	this.playerType = "Machine";
 	this.opp = (this.mark == 'X') ? 'O' : 'X';
-	// this.callBack;
 	//return the best move
 	this.play = function() {
-		return this.getBestMove();
+		this.getBestMove();
 	}
 	this.getBestMove = function() {
 		console.info(board.prettyPrint());
-		var best = this.minimax(board, mark, 6);
-		console.info(best);
-		return best[1];
-		// console.info(score);
-		// this.callBack(score[1]);
+		if (board.isEmpty()) {return 4}
+		var bestMove = this.minimax(board, mark, 4)[1];
+		return bestMove;
 	}
 	//Evaluation function
 	this.evaluate = function(clone) {
@@ -72,13 +66,13 @@ var WhiteQueenPlayer = function(mark, board) {
 		for (var i = moves.length - 1; i >= 0; i--) {
 			var move = moves[i];
 			clone.board[move][1] = player;
-			// console.info(clone.prettyPrint());
+			console.info(clone.prettyPrint());
 			var evaluation = this.evaluate(clone);
 			//stopping condetion
 			if (evaluation != undefined || depth == 0) {
 				bestScore = evaluation;
 				bestMove = move;
-				return [bestScore, bestMove];
+				break;
 			};
 			if (player == mark) {
 				var current = this.minimax(clone, this.opp, depth - 1)[0]
@@ -101,63 +95,35 @@ var WhiteQueenPlayer = function(mark, board) {
 	}
 }
 
-var Game = function(xPlayer, oPlayer, board, q, timeOut) {
-	var _this = this;
+var Game = function(xPlayer, oPlayer, board,gameType) {
 	this.currPlayer = xPlayer;
-	var callBack;
-	this.start = function(callBack) {
-		this.callBack = callBack;
-		if (oPlayer.playerType === 'Machine' && xPlayer.playerType === 'Machine') {
-			while(board.weHaveWinner()==undefined&&!board.isFull()){
-				board.board[this.currPlayer.play()][1] = this.currPlayer.mark;
-				this.currPlayer = (this.currPlayer == xPlayer) ? oPlayer : xPlayer;	
-			}
-		};
-	}
-	this.markSquare = function(index) {
-		// check If we have a winner
-
-		if (oPlayer.playerType === 'Human' && xPlayer.playerType === 'Human') {
-			board.board[index][1] = this.currPlayer.mark;
-			var winner = board.weHaveWinner();
-			if (winner != undefined) {
-				timeOut(function() {
-					_this.callBack("Winner IS:" + winner)
-				}, 500);
+	this.markSquare=function (index) {
+		board.board[index][1] = this.currPlayer.mark;
+		var winner=board.weHaveWinner();
+		if (gameType=='hvh') {
+			if (winner!=undefined) {
+				return "Winner IS:"+winner;
 			}
 			if (board.isFull()) {
-				timeOut(function() {
-					_this.callBack(this.callBack("Winner IS: ALL of US :D"));
-				}, 500);
-
+				return "Winner IS: ALL of US :D";
 			}
-			this.currPlayer = (this.currPlayer == xPlayer) ? oPlayer : xPlayer;
-		} else if (oPlayer.playerType != xPlayer.playerType) {
-			board.board[index][1] = this.currPlayer.mark;
-			this.currPlayer = (this.currPlayer == xPlayer) ? oPlayer : xPlayer;
-			timeOut(function() {
-				board.board[_this.currPlayer.play()][1] = _this.currPlayer.mark;
-				var winner = board.weHaveWinner();
-				if (winner != undefined) {
-					_this.callBack("Winner IS:" + winner)
-				}
-				if (board.isFull()) {
-					_this.callBack(this.callBack("Winner IS: ALL of US :D"));
-
-				}
-				_this.currPlayer = (_this.currPlayer == xPlayer) ? oPlayer : xPlayer;
-			}, 500);
-
-
-		}
+			this.currPlayer=(this.currPlayer==xPlayer)?oPlayer:xPlayer;
+		}else if (gameType=='hvc') {
+			this.currPlayer=(this.currPlayer==xPlayer)?oPlayer:xPlayer;
+			board.board[index][1]=this.currPlayer.play();
+		};
+	}
+	
+	this.start = function() {
+		// play(xPlayer, oPlayer);
 	}
 	var play = function(player, opp) {
 		var index;
 		player.play(function(move) {
 			index = move;
 			board.board[index][1] = player.mark;
-			if (board.weHaveWinner() == undefined || !board.isFull()) {
-				play(opp, player);
+			if (board.weHaveWinner()==undefined||!board.isFull()) {
+				window.setInterval(play(opp,player),100);
 			}
 		});
 	}
@@ -218,6 +184,7 @@ Board.prototype = {
 		return true;
 	},
 	getSquare: function(index) {
+		console.info(index,this.board[index][1]);
 		return this.board[index][1];
 	},
 	callBack: function() {},
@@ -226,7 +193,10 @@ Board.prototype = {
 		this.w = this.wins;
 		this.s = this.getSquare;
 		for (var i = 0; i < 8; i++) {
-			if (this.s(this.w[i][0]) === this.s(this.w[i][1]) && this.s(this.w[i][0]) === this.s(this.w[i][2]) && this.s(this.w[i][0]) != this.EMPTY) {
+			console.info(this.w[i]);
+			if (this.s(this.w[i][0]) === this.s(this.w[i][1]) 
+				&& this.s(this.w[i][0]) === this.s(this.w[i][2]) 
+				&& this.s(this.w[i][0]) != this.EMPTY) {
 				this.callBack(this.s(this.w[i][0]));
 				return this.s(this.w[i][0])
 			}
@@ -237,7 +207,7 @@ Board.prototype = {
 	},
 	copy: function() {
 		var clone = new Board();
-		angular.copy(this.board, clone.board);
+		 angular.copy(this.board,clone.board);
 		return clone;
 	},
 	prettyPrint: function() {

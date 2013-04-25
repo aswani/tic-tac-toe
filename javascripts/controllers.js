@@ -3,24 +3,45 @@
 /* Controllers */
 
 function GameCtrl($scope, $q, $timeout) {
-	$scope.board = new Board();
-	$scope.xPlayer = new WhiteQueenPlayer("X", $scope.board);
-	$scope.oPlayer = new WhiteQueenPlayer("O", $scope.board);
+	//Game type
 	$scope.gameType = "hvh";
-
-	$scope.game = new Game($scope.xPlayer, $scope.oPlayer, $scope.board,$timeout);
 	//capture cell click event
 	$scope.mark = function(index) {
 		if ($scope.board.board[index][1] != "") return;
 		$scope.game.markSquare(index)
 	};
-	//start the Game
-	$scope.game.start(function(result) {
-		// game result IS sent!!
-		if (result != undefined) {
-			alert(result);
-		};
-	});
+	//play button initiate the Game.
+	$scope.play = function() {
+		switch ($scope.gameType) {
+			case 'cvc':
+				//two computers 
+				$scope.xPlayer = new WhiteQueenPlayer("X", $scope.board);
+				$scope.oPlayer = new WhiteQueenPlayer("O", $scope.board);
+				break;
+			case 'hvc':
+				//human vs computer
+				$scope.xPlayer = new HumanPlayer("X", $scope.board);
+				$scope.oPlayer = new WhiteQueenPlayer("O", $scope.board);
+				break;
+			default:
+				//two 
+				$scope.xPlayer = new HumanPlayer("X", $scope.board);
+				$scope.oPlayer = new HumanPlayer("O", $scope.board);
+		}
+		$scope.board = new Board();
+		$scope.game = new Game($scope.xPlayer, $scope.oPlayer, $scope.board, $timeout);
+		//start the Game
+		$scope.game.start(function(result) {
+			// game result IS sent!!
+			if (result != undefined) {
+				alert(result);
+				$scope.play();
+			};
+		});
+	}
+	//default Game
+	$scope.play();
+
 }
 
 var HumanPlayer = function(mark, board) {
@@ -78,7 +99,8 @@ var WhiteQueenPlayer = function(mark, board) {
 			if (evaluation != undefined || depth == 0) {
 				bestScore = evaluation;
 				bestMove = move;
-				return [bestScore, bestMove];
+				break;
+				//return [bestScore, bestMove];
 			};
 			if (player == mark) {
 				var current = this.minimax(clone, this.opp, depth - 1)[0]
@@ -101,18 +123,23 @@ var WhiteQueenPlayer = function(mark, board) {
 	}
 }
 
-var Game = function(xPlayer, oPlayer, board, q, timeOut) {
+var Game = function(xPlayer, oPlayer, board, timeOut) {
 	var _this = this;
 	this.currPlayer = xPlayer;
 	var callBack;
 	this.start = function(callBack) {
 		this.callBack = callBack;
 		if (oPlayer.playerType === 'Machine' && xPlayer.playerType === 'Machine') {
-			while(board.weHaveWinner()==undefined&&!board.isFull()){
+			while (board.weHaveWinner() == undefined && !board.isFull()) {
 				board.board[this.currPlayer.play()][1] = this.currPlayer.mark;
-				this.currPlayer = (this.currPlayer == xPlayer) ? oPlayer : xPlayer;	
+				this.currPlayer = (this.currPlayer == xPlayer) ? oPlayer : xPlayer;
 			}
-		};
+			// this.callBack(this.callBack("The titans are Equal!!"));
+			timeOut(function() {
+				_this.callBack("The titans are Equal!!");
+			}, 500);
+		}
+
 	}
 	this.markSquare = function(index) {
 		// check If we have a winner
@@ -127,12 +154,13 @@ var Game = function(xPlayer, oPlayer, board, q, timeOut) {
 			}
 			if (board.isFull()) {
 				timeOut(function() {
-					_this.callBack(this.callBack("Winner IS: ALL of US :D"));
+					_this.callBack("Winner IS: ALL of US :D");
 				}, 500);
 
 			}
 			this.currPlayer = (this.currPlayer == xPlayer) ? oPlayer : xPlayer;
-		} else if (oPlayer.playerType != xPlayer.playerType) {
+		}
+		else if (oPlayer.playerType != xPlayer.playerType) {
 			board.board[index][1] = this.currPlayer.mark;
 			this.currPlayer = (this.currPlayer == xPlayer) ? oPlayer : xPlayer;
 			timeOut(function() {
@@ -146,20 +174,10 @@ var Game = function(xPlayer, oPlayer, board, q, timeOut) {
 
 				}
 				_this.currPlayer = (_this.currPlayer == xPlayer) ? oPlayer : xPlayer;
-			}, 500);
+			}, 0);
 
 
 		}
-	}
-	var play = function(player, opp) {
-		var index;
-		player.play(function(move) {
-			index = move;
-			board.board[index][1] = player.mark;
-			if (board.weHaveWinner() == undefined || !board.isFull()) {
-				play(opp, player);
-			}
-		});
 	}
 }
 // The BOARD Class

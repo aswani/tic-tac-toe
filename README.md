@@ -6,7 +6,7 @@ A tic-tac-toe game Implemented with Javascript and Angularjs
 Game can be played live:
 
 tests were writen by jasmin under test folder
-testacular was the test runner
+karma was the test runner http://karma-runner.github.io/0.8/index.html
 
 references:
 *http://en.wikipedia.org/wiki/Minimax

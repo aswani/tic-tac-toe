@@ -2,7 +2,7 @@
 
 /* Controllers */
 
-function GameCtrl($scope, $q, $timeout) {
+function GameCtrl($scope,$timeout) {
 
 	$scope.gameType = "hvh";
 	//capture cell click event

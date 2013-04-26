@@ -7,7 +7,7 @@ function GameCtrl($scope,$timeout) {
 	$scope.gameType = "hvh";
 	//capture cell click event
 	$scope.mark = function(index) {
-		if ($scope.board.board[index][1] != "") return;
+		if ($scope.board.board[index]!= "") return;
 		$scope.game.markSquare(index)
 	}
 
@@ -62,6 +62,8 @@ var WhiteQueenPlayer = function(mark, board) {
 	// this.callBack;
 	//return the best move
 	this.play = function() {
+		//save time on the first move to center
+		if (board.isEmpty()) {return 4};
 		return this.getBestMove();
 	}
 	this.getBestMove = function() {
@@ -94,7 +96,7 @@ var WhiteQueenPlayer = function(mark, board) {
 		//recursion
 		for (var i = moves.length - 1; i >= 0; i--) {
 			var move = moves[i];
-			clone.board[move][1] = player;
+			clone.board[move] = player;
 			// console.info(clone.prettyPrint());
 			var evaluation = this.evaluate(clone);
 			//stopping condetion
@@ -118,7 +120,7 @@ var WhiteQueenPlayer = function(mark, board) {
 					bestMove = move;
 				}
 			}
-			clone.board[move][1] = '';
+			clone.board[move] = '';
 
 		}
 		return [bestScore, bestMove]
@@ -135,7 +137,7 @@ var Game = function(xPlayer, oPlayer, board, timeOut) {
 		//the cas of two machines
 		if (oPlayer.playerType === 'Machine' && xPlayer.playerType === 'Machine') {
 			while (board.weHaveWinner() == undefined && !board.isFull()) {
-				board.board[this.currPlayer.play()][1] = this.currPlayer.mark;
+				board.board[this.currPlayer.play()] = this.currPlayer.mark;
 				this.currPlayer = (this.currPlayer == xPlayer) ? oPlayer : xPlayer;
 			}
 			timeOut(function() {
@@ -148,19 +150,19 @@ var Game = function(xPlayer, oPlayer, board, timeOut) {
 	this.markSquare = function(index) {
 		//human vs Human
 		if (oPlayer.playerType === 'Human' && xPlayer.playerType === 'Human') {
-			board.board[index][1] = this.currPlayer.mark;
+			board.board[index] = this.currPlayer.mark;
 			var winner = board.weHaveWinner();
 			if (winner != undefined) {
 				announceWinner(winner);
 			}
 			//no more space
-			if (board.isFull()) {
+			else if (board.isFull()) {
 				tie();
 
 			}
 			this.currPlayer = (this.currPlayer == xPlayer) ? oPlayer : xPlayer;
 		} else if (oPlayer.playerType != xPlayer.playerType) {
-			board.board[index][1] = this.currPlayer.mark;
+			board.board[index] = this.currPlayer.mark;
 			if (board.isFull()) {
 				if (board.isFull()) {
 					tie();
@@ -169,7 +171,7 @@ var Game = function(xPlayer, oPlayer, board, timeOut) {
 			}
 			this.currPlayer = (this.currPlayer == xPlayer) ? oPlayer : xPlayer;
 			timeOut(function() {
-				board.board[_this.currPlayer.play()][1] = _this.currPlayer.mark;
+				board.board[_this.currPlayer.play()] = _this.currPlayer.mark;
 				var winner = board.weHaveWinner();
 				if (winner != undefined) {
 					announceWinner(winner);
@@ -193,6 +195,7 @@ var Game = function(xPlayer, oPlayer, board, timeOut) {
 		}, 500);
 	}
 
+	//call bac that we have a winner
 	function announceWinner(winner) {
 		timeOut(function() {
 			_this.callBack("Winner IS:" + winner)
@@ -201,17 +204,21 @@ var Game = function(xPlayer, oPlayer, board, timeOut) {
 }
 // The BOARD Class
 var Board = function() {
+	//the board 
+	//TODO remove the first element 
 	this.board = [
-		[0, ""],
-		[0, ""],
-		[0, ""],
-		[0, ""],
-		[0, ""],
-		[0, ""],
-		[0, ""],
-		[0, ""],
-		[0, ""]
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		"",
+		""
 	];
+
+	// combinations which makes a winner
 	this.wins = [
 		[0, 1, 2],
 		[3, 4, 5],
@@ -224,63 +231,69 @@ var Board = function() {
 	];
 
 	this.EMPTY = "";
-	this.X = 1;
-	this.O = 2;
 }
+
+//extend the board class
 Board.prototype = {
+
+	// where the next move can be
 	getPossibleMoves: function() {
 		var moves = [];
 		for (var i = 0; i < 9; i++) {
-			if (this.board[i][1] === this.EMPTY) {
+			if (this.board[i] === this.EMPTY) {
 				moves.push(i);
 			}
 		}
 		return moves;
 	},
+
+	////chek if the board Is full
 	isFull: function() {
 		for (var i = 0; i < 9; i++) {
-			if (this.board[i][1] === this.EMPTY) {
+			if (this.board[i] === this.EMPTY) {
 				return false;
 			}
 		}
-		this.callBack(undefined)
+		// this.callBack(undefined)
 		return true;
 	},
+
+	//chek if the board Is empty
 	isEmpty: function() {
 		for (var i = 0; i < 9; i++) {
-			if (this.board[i][1] != this.EMPTY) {
+			if (this.board[i]!= this.EMPTY) {
 				return false;
 			}
 		}
 		return true;
 	},
-	getSquare: function(index) {
-		return this.board[index][1];
-	},
-	callBack: function() {},
-	weHaveWinner: function() {
 
+	//get the mark in spcific cell
+	getSquare: function(index) {
+		return this.board[index];
+	},
+	// announce the winner or return undefined
+	weHaveWinner: function() {
 		this.w = this.wins;
 		this.s = this.getSquare;
 		for (var i = 0; i < 8; i++) {
 			if (this.s(this.w[i][0]) === this.s(this.w[i][1]) && this.s(this.w[i][0]) === this.s(this.w[i][2]) && this.s(this.w[i][0]) != this.EMPTY) {
-				this.callBack(this.s(this.w[i][0]));
+				// this.callBack(this.s(this.w[i][0]));
 				return this.s(this.w[i][0])
 			}
 		}
 	},
-	getWinner: function(callBack) {
-		this.callBack = callBack;
-	},
+	//clone the board
 	copy: function() {
 		var clone = new Board();
 		angular.copy(this.board, clone.board);
 		return clone;
 	},
+	///print the board
 	prettyPrint: function() {
 		var str = "";
 		for (var i = 0; i < 9; i++) {
-			str += ((i + 1) % 3 == 0) ? this.board[i][1] + "\n" : this.board[i][1];
+			str += ((i + 1) % 3 == 0) ? this.board[i] + "\n" : this.board[i];
 		}
 		return str;
 	}
